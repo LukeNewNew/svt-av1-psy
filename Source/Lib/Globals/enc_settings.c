@@ -1133,6 +1133,7 @@ EbErrorType svt_av1_set_default_params(EbSvtAv1EncConfiguration *config_ptr) {
     config_ptr->sharp_tx                          = 1;
     config_ptr->hbd_md                            = 0;
     config_ptr->complex_hvs                       = 0;
+    config_ptr->noise_detect                      = TRUE;
     return return_error;
 }
 
@@ -1323,6 +1324,10 @@ void svt_av1_print_lib_params(SequenceControlSet *scs) {
 		if (config->low_q_taper) {
             SVT_INFO("SVT [config]: Low Q Taper \t\t\t\t\t\t\t: %s\n",
                     config->low_q_taper ? "On" : "Off");
+        }
+        
+        if (config->noise_detect == 0) {
+            SVT_INFO("SVT [config]: Noise detect \t\t\t\t\t\t\t: Off\n");
         }
     }
 #ifdef DEBUG_BUFFERS
@@ -2333,6 +2338,7 @@ EB_API EbErrorType svt_av1_enc_parse_parameter(EbSvtAv1EncConfiguration *config_
         {"low-q-taper", &config_struct->low_q_taper},
         {"sharp-tx", &config_struct->sharp_tx},
         {"hbd-md", &config_struct->hbd_md},
+        {"noise-detect", &config_struct->noise_detect},
     };
     const size_t bool_opts_size = sizeof(bool_opts) / sizeof(bool_opts[0]);
 
