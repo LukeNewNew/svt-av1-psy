@@ -924,7 +924,7 @@ EbErrorType svt_av1_verify_settings(SequenceControlSet *scs) {
         return_error = EB_ErrorBadParameter;
     }
 
-    if (config->noise_norm_strength > 4) {
+    if (config->noise_norm_strength > 4 || config->noise_norm_strength < DEFAULT) {
         SVT_ERROR("Instance %u: Noise normalization strength must be between 0 and 4\n", channel_number + 1);
         return_error = EB_ErrorBadParameter;
     }
@@ -1126,7 +1126,7 @@ EbErrorType svt_av1_set_default_params(EbSvtAv1EncConfiguration *config_ptr) {
     config_ptr->adaptive_film_grain               = TRUE;
     config_ptr->tf_strength                       = 1;
     config_ptr->kf_tf_strength                    = 1;
-    config_ptr->noise_norm_strength               = 0;
+    config_ptr->noise_norm_strength               = DEFAULT;
     config_ptr->psy_rd                            = 0.5;
     config_ptr->spy_rd                            = 0;
     config_ptr->low_q_taper                       = 0;
@@ -1269,7 +1269,7 @@ void svt_av1_print_lib_params(SequenceControlSet *scs) {
 
         switch (config->enable_tf) {
             case 2:
-                if (config->noise_norm_strength < 1 && config->tune == 3) {
+                if (config->noise_norm_strength == DEFAULT && config->tune == 3) {
                     SVT_INFO("SVT [config]: Temporal Filtering Strength / Noise Normalization Strength \t: %s / 3\n",
                             "auto");
                 } else if (config->noise_norm_strength < 1) {
@@ -1285,12 +1285,14 @@ void svt_av1_print_lib_params(SequenceControlSet *scs) {
                         "auto");
                 break;
             default:
-                if (config->enable_tf == 0 && config->noise_norm_strength < 1) {
+                if (config->enable_tf == 0 && config->noise_norm_strength == DEFAULT && config->tune == 3) {
+                    SVT_INFO("SVT [config]: Noise Normalization Strength \t\t\t\t\t: 3\n");
+                } else if (config->enable_tf == 0 && config->noise_norm_strength < 1) {
                     // don't print anything
                 } else if (config->enable_tf == 0) {
                     SVT_INFO("SVT [config]: Noise Normalization Strength \t\t\t\t\t: %d\n",
                             config->noise_norm_strength);
-                } else if (config->noise_norm_strength < 1 && config->tune == 3) {
+                } else if (config->noise_norm_strength == DEFAULT && config->tune == 3) {
                     SVT_INFO("SVT [config]: Temporal Filtering Strength / Noise Normalization Strength \t: %d / 3\n",
                             config->tf_strength);
                 } else if (config->noise_norm_strength < 1) {
@@ -2204,7 +2206,6 @@ EB_API EbErrorType svt_av1_enc_parse_parameter(EbSvtAv1EncConfiguration *config_
         {"frame-luma-bias", &config_struct->frame_luma_bias},
         {"tf-strength", &config_struct->tf_strength},
         {"kf-tf-strength", &config_struct->kf_tf_strength},
-        {"noise-norm-strength", &config_struct->noise_norm_strength},
         {"fast-decode", &config_struct->fast_decode},
         {"enable-tf", &config_struct->enable_tf},
         {"spy-rd", &config_struct->spy_rd},
@@ -2295,6 +2296,7 @@ EB_API EbErrorType svt_av1_enc_parse_parameter(EbSvtAv1EncConfiguration *config_
     } int8_opts[] = {
         {"preset", &config_struct->enc_mode},
         {"sharpness", &config_struct->sharpness},
+        {"noise-norm-strength", &config_struct->noise_norm_strength},
     };
     const size_t int8_opts_size = sizeof(int8_opts) / sizeof(int8_opts[0]);
 

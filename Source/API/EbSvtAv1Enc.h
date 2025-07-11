@@ -1073,9 +1073,9 @@ typedef struct EbSvtAv1EncConfiguration {
      * to boost AC coefficients in low-noise blocks.
      * Min value is 0.
      * Max value is 4.
-     * Default is 3.
+     * Default is 0, or 3 for Tune 3.
      */
-    uint8_t noise_norm_strength;
+    int8_t noise_norm_strength;
 
     /**
      * @brief Enable psychovisual rate distortion
@@ -1133,9 +1133,9 @@ typedef struct EbSvtAv1EncConfiguration {
 
     /*Add 128 Byte Padding to Struct to avoid changing the size of the public configuration struct*/
 #if CLN_LP_LVLS
-    uint8_t padding[128 - 7 * sizeof(Bool) - 12 * sizeof(uint8_t) - sizeof(int8_t) - sizeof(uint32_t) - sizeof(double)];
+    uint8_t padding[128 - 7 * sizeof(Bool) - 11 * sizeof(uint8_t) - 2 * sizeof(int8_t) - sizeof(uint32_t) - sizeof(double)];
 #else
-    uint8_t padding[128 - 7 * sizeof(Bool) - 12 * sizeof(uint8_t) - sizeof(int8_t) - sizeof(double)];
+    uint8_t padding[128 - 7 * sizeof(Bool) - 11 * sizeof(uint8_t) - 2 * sizeof(int8_t) - sizeof(double)];
 #endif
 
 } EbSvtAv1EncConfiguration;
