@@ -1353,7 +1353,7 @@ ConfigEntry config_entry_psy[] = {
      set_cfg_generic_token},
      {SINGLE_INPUT,
      NOISE_DETECT_TOKEN,
-     "[PSY] Enable noise detector for CDEF and restoration filtering, default is 1 [0-1]",
+     "[PSY] Enable noise detector for CDEF and restoration filtering, default is 1 [0: off, 1: on, 2: on (CDEF only), 3: on (restoration only)]",
      set_cfg_generic_token},
     // Termination
     {SINGLE_INPUT, NULL, NULL, NULL}};

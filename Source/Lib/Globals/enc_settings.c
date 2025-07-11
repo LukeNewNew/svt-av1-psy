@@ -1133,7 +1133,7 @@ EbErrorType svt_av1_set_default_params(EbSvtAv1EncConfiguration *config_ptr) {
     config_ptr->sharp_tx                          = 1;
     config_ptr->hbd_md                            = 0;
     config_ptr->complex_hvs                       = 0;
-    config_ptr->noise_detect                      = TRUE;
+    config_ptr->noise_detect                      = 1;
     return return_error;
 }
 
@@ -1326,8 +1326,19 @@ void svt_av1_print_lib_params(SequenceControlSet *scs) {
                     config->low_q_taper ? "On" : "Off");
         }
         
-        if (config->noise_detect == 0) {
-            SVT_INFO("SVT [config]: Noise detect \t\t\t\t\t\t\t: Off\n");
+        switch (config->noise_detect) {
+            case 0:
+                SVT_INFO("SVT [config]: Noise detect \t\t\t\t\t\t\t: Off\n");
+                break;
+            case 1:
+                SVT_INFO("SVT [config]: Noise detect \t\t\t\t\t\t\t: On\n");
+                break;
+            case 2:
+                SVT_INFO("SVT [config]: Noise detect \t\t\t\t\t\t\t: On (CDEF only)\n");
+                break;
+            case 3:
+                SVT_INFO("SVT [config]: Noise detect \t\t\t\t\t\t\t: On (restoration only)\n");
+                break;
         }
     }
 #ifdef DEBUG_BUFFERS
@@ -2215,6 +2226,7 @@ EB_API EbErrorType svt_av1_enc_parse_parameter(EbSvtAv1EncConfiguration *config_
         {"enable-tf", &config_struct->enable_tf},
         {"spy-rd", &config_struct->spy_rd},
         {"complex-hvs", &config_struct->complex_hvs},
+        {"noise-detect", &config_struct->noise_detect},
     };
     const size_t uint8_opts_size = sizeof(uint8_opts) / sizeof(uint8_opts[0]);
 
@@ -2338,7 +2350,6 @@ EB_API EbErrorType svt_av1_enc_parse_parameter(EbSvtAv1EncConfiguration *config_
         {"low-q-taper", &config_struct->low_q_taper},
         {"sharp-tx", &config_struct->sharp_tx},
         {"hbd-md", &config_struct->hbd_md},
-        {"noise-detect", &config_struct->noise_detect},
     };
     const size_t bool_opts_size = sizeof(bool_opts) / sizeof(bool_opts[0]);
 
