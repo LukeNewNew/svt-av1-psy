@@ -5058,8 +5058,8 @@ static void copy_api_from_app(
     // Complex HVS
     scs->static_config.complex_hvs = config_struct->complex_hvs;
 
-    // Noise detect
-    scs->static_config.noise_detect = config_struct->noise_detect;
+    // Force filtering
+    scs->static_config.force_filtering = config_struct->force_filtering;
 
     // Override settings for Still Picture tune
     if (scs->static_config.tune == 4) {

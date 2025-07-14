@@ -229,7 +229,7 @@
 #define SHARP_TX_TOKEN "--sharp-tx"
 #define HBD_MD_TOKEN "--hbd-md"
 #define COMPLEX_HVS_TOKEN "--complex-hvs"
-#define NOISE_DETECT_TOKEN "--noise-detect"
+#define FORCE_FILTERING_TOKEN "--force-filtering"
 
 static EbErrorType validate_error(EbErrorType err, const char *token, const char *value) {
     switch (err) {
@@ -1352,8 +1352,8 @@ ConfigEntry config_entry_psy[] = {
      "[PSY] Enable highest complexity HVS model, default is 0 [0-1]",
      set_cfg_generic_token},
      {SINGLE_INPUT,
-     NOISE_DETECT_TOKEN,
-     "[PSY] Enable noise detector for CDEF and restoration filtering, default is 1 [0: off, 1: on, 2: on (CDEF only), 3: on (restoration only)]",
+     FORCE_FILTERING_TOKEN,
+     "[PSY] Force CDEF/restoration filtering regardless of noise level, default is 0 [0: off, 1: CDEF/restoration forced, 2: CDEF forced, 3: restoration forced]",
      set_cfg_generic_token},
     // Termination
     {SINGLE_INPUT, NULL, NULL, NULL}};
@@ -1590,8 +1590,8 @@ ConfigEntry config_entry[] = {
     // Complex HVS
     {SINGLE_INPUT, COMPLEX_HVS_TOKEN, "ComplexHVS", set_cfg_generic_token},
 
-    // Noise detect
-    {SINGLE_INPUT, NOISE_DETECT_TOKEN, "NoiseDetect", set_cfg_generic_token},
+    // Force filtering
+    {SINGLE_INPUT, FORCE_FILTERING_TOKEN, "ForceFiltering", set_cfg_generic_token},
 
     // Termination
     {SINGLE_INPUT, NULL, NULL, NULL}};

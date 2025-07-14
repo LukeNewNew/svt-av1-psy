@@ -865,7 +865,7 @@ void *svt_aom_mode_decision_configuration_kernel(void *input_ptr) {
         CdefControls *cdef_ctrls = &pcs->ppcs->cdef_ctrls;
         uint8_t       skip_perc  = pcs->ref_skip_percentage;
         if ((skip_perc > 75 && cdef_ctrls->use_skip_detector) ||
-            (scs->vq_ctrls.sharpness_ctrls.cdef && pcs->ppcs->is_noise_level && (pcs->scs->static_config.noise_detect == 1 || pcs->scs->static_config.noise_detect == 2)))
+            (scs->vq_ctrls.sharpness_ctrls.cdef && pcs->ppcs->is_noise_level && (pcs->scs->static_config.force_filtering == 0 || pcs->scs->static_config.force_filtering == 3)))
             pcs->ppcs->cdef_level = 0;
         else {
             if (cdef_ctrls->use_reference_cdef_fs) {
@@ -966,7 +966,7 @@ void *svt_aom_mode_decision_configuration_kernel(void *input_ptr) {
             }
         }
 
-        if (scs->vq_ctrls.sharpness_ctrls.restoration && pcs->ppcs->is_noise_level && (pcs->scs->static_config.noise_detect == 1 || pcs->scs->static_config.noise_detect == 3)) {
+        if (scs->vq_ctrls.sharpness_ctrls.restoration && pcs->ppcs->is_noise_level && (pcs->scs->static_config.force_filtering == 0 || pcs->scs->static_config.force_filtering == 2)) {
             pcs->ppcs->enable_restoration = 0;
         }
 

@@ -1132,11 +1132,14 @@ typedef struct EbSvtAv1EncConfiguration {
      uint8_t complex_hvs;
 
      /**
-     * @brief Enable noise detector for CDEF and restoration filtering.
-     *
-     * Default is 1. 0 = off, 1 = on for CDEF/restoration, 2 = on for CDEF only, 3 = on for restoration only.
+     * @brief Force CDEF/restoration filtering regardless of noise level.
+     * 0: off, follows default encoder behavior
+     * 1: CDEF/restoration forced
+     * 2: CDEF forced
+     * 3: restoration forced
+     * Default is 0.
      */
-     uint8_t noise_detect;
+     uint8_t force_filtering;
 
     /*Add 128 Byte Padding to Struct to avoid changing the size of the public configuration struct*/
 #if CLN_LP_LVLS
