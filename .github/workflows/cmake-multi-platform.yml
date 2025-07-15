@@ -1,10 +1,12 @@
 name: CI build
 
 on:
+  workflow_dispatch:
+    branches: [ "master", "testing-2.3.0-C" ]
   push:
-    branches: [ "master" ]
+    branches: [ "master", "testing-2.3.0-C" ]
   pull_request:
-    branches: [ "master", "testing" ]
+    branches: [ "master", "testing-2.3.0-C" ]
 
 jobs:
   build:
@@ -15,11 +17,13 @@ jobs:
       matrix:
         config:
           - {
-              name: "Windows MSVC 64 Bit",
+              name: "Windows Clang 64 Bit",
               os: windows-2022,
               environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat",
-              generators: "Visual Studio 17 2022",
-              msvc_arch: x64
+              generators: "Ninja",
+              msvc_arch: x64,
+              c_compiler: clang,
+              cpp_compiler: clang++
             }
           - {
               name: "Ubuntu Latest",
@@ -47,14 +51,36 @@ jobs:
     - uses: ilammy/setup-nasm@v1
     - run: git fetch --prune --unshallow
     - name: Ubuntu/Mac OS X
-      if: ${{ !contains( matrix.config.generators, 'Visual Studio' ) }}
+      if: ${{ !contains( matrix.config.os, 'windows' ) }}
       run: |
-        cmake --fresh -B Build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_CXX_COMPILER=${{ matrix.config.cpp_compiler }}" "-DCMAKE_C_COMPILER=${{ matrix.config.c_compiler }}" -DNATIVE=ON -DSVT_AV1_LTO=ON -DBUILD_APPS=ON -DBUILD_DEC=OFF -DREPRODUCIBLE_BUILDS=ON "-DCMAKE_OSX_ARCHITECTURES=${{ matrix.config.osx_arch }}"
-        cmake --build Build --config Release --parallel $(getconf _NPROCESSORS_ONLN 2> /dev/null || nproc 2> /dev/null || sysctl -n hw.ncpu 2> /dev/null)
+        cmake --fresh -B svt_build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_CXX_COMPILER=${{ matrix.config.cpp_compiler }}" "-DCMAKE_C_COMPILER=${{ matrix.config.c_compiler }}" -DNATIVE=ON -DBUILD_SHARED_LIBS=OFF -DSVT_AV1_LTO=ON -DENABLE_AVX512=ON -DBUILD_DEC=OFF -DREPRODUCIBLE_BUILDS=ON "-DCMAKE_OSX_ARCHITECTURES=${{ matrix.config.osx_arch }}"
+        cmake --build svt_build --config Release
       shell: bash
-    - name: MSVC build
-      if: contains( matrix.config.generators, 'Visual Studio' )
+    - name: Windows Clang + Ninja build
+      if: contains( matrix.config.os, 'windows' )
       run: |
-        cmake -B Build -A "${{ matrix.config.msvc_arch }}" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_APPS=ON -DBUILD_DEC=OFF -DREPRODUCIBLE_BUILDS=ON
-        cmake --build Build --config Release
+        call "${{ matrix.config.environment_script }}"
+        set CC=clang
+        set CXX=clang
+        cmake --fresh -B svt_build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DSVT_AV1_LTO=ON -DENABLE_AVX512=ON -DCMAKE_C_FLAGS_RELEASE="-ffast-math -O3 -DNDEBUG -march=znver2" -DCMAKE_CXX_FLAGS_RELEASE="-ffast-math -O3 -DNDEBUG -march=znver2" -DREPRODUCIBLE_BUILDS=ON
+        ninja -C svt_build
       shell: cmd
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.config.name }}
+        path: Bin/Release/
+        retention-days: 90
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ matrix.config.os }}_${{ matrix.config.c_compiler }}
+        name: Release ${{ matrix.config.os }}_${{ matrix.config.c_compiler }}
+        draft: false
+        prerelease: false
+        body: "${{ matrix.config.os }}_${{ matrix.config.c_compiler }}"
+        files: |
+          Bin/Release/*
