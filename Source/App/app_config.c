@@ -150,6 +150,7 @@
 #define QP_FILE_NEW_TOKEN "--qpfile"
 #define INPUT_DEPTH_TOKEN "--input-depth"
 #define KEYINT_TOKEN "--keyint"
+#define MIN_KEYINT_TOKEN "--min-keyint"
 #define LOOKAHEAD_NEW_TOKEN "--lookahead"
 #define SVTAV1_PARAMS "--svtav1-params"
 
@@ -1020,8 +1021,13 @@ ConfigEntry config_entry_2p[] = {
 ConfigEntry config_entry_intra_refresh[] = {
     {SINGLE_INPUT,
      KEYINT_TOKEN,
-     "GOP size (frames), default is -2 [-2: ~10 seconds, -1: \"infinite\" and only applicable for "
-     "CRF, 0: same as -1]",
+     "Max GOP size (frames), default is -1 [-1: ~10 seconds, 0: \"infinite\" and only applicable for "
+     "CRF]",
+     set_cfg_generic_token},
+    {SINGLE_INPUT,
+     MIN_KEYINT_TOKEN,
+     "Min GOP size (frames), default is -1 [-1: multiple of the mini-gop length (automatic), "
+     "0: no minimum]",
      set_cfg_generic_token},
     {SINGLE_INPUT,
      INTRA_REFRESH_TYPE_TOKEN,
@@ -1029,7 +1035,7 @@ ConfigEntry config_entry_intra_refresh[] = {
      set_cfg_generic_token},
     {SINGLE_INPUT,
      SCENE_CHANGE_DETECTION_TOKEN,
-     "Scene change detection control, default is 0 [0-1]",
+     "Scene change detection control, default is 1 [0-1]",
      set_cfg_generic_token},
     {SINGLE_INPUT,
      LOOKAHEAD_NEW_TOKEN,
@@ -1463,6 +1469,7 @@ ConfigEntry config_entry[] = {
     // GOP size and type Options
     {SINGLE_INPUT, INTRA_PERIOD_TOKEN, "IntraPeriod", set_cfg_generic_token},
     {SINGLE_INPUT, KEYINT_TOKEN, "Keyint", set_cfg_generic_token},
+    {SINGLE_INPUT, MIN_KEYINT_TOKEN, "MinKeyint", set_cfg_generic_token},
     {SINGLE_INPUT, INTRA_REFRESH_TYPE_TOKEN, "IntraRefreshType", set_cfg_generic_token},
     {SINGLE_INPUT, SCENE_CHANGE_DETECTION_TOKEN, "SceneChangeDetection", set_cfg_generic_token},
     {SINGLE_INPUT, LOOKAHEAD_NEW_TOKEN, "Lookahead", set_cfg_generic_token},
@@ -2551,8 +2558,8 @@ uint32_t get_passes(int32_t argc, char *const argv[], EncPass enc_pass[MAX_ENC_P
         ip = c.multiply_keyint && c.intra_period_length > 0 ? max_keyint : c.intra_period_length;
         if (!is_keyint)
             fputs("[SVT-Warning]: --intra-period is deprecated for --keyint\n", stderr);
-        if ((ip < -2 || ip > max_keyint) && rc_mode == 0) {
-            fprintf(stderr, "[SVT-Error]: The intra period must be [-2, 2^31-2], input %d\n", ip);
+        if ((ip < -1 || ip > max_keyint) && rc_mode == 0) {
+            fprintf(stderr, "[SVT-Error]: The intra period must be [-1, 2^31-2], input %d\n", ip);
             return 0;
         }
         if ((ip < 0) && rc_mode == 1) {

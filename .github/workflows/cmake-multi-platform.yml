@@ -1,11 +1,13 @@
-name: CI build
-
+name: auto build
 on:
+  workflow_dispatch:
+    branches:
+      - main
+      - fast
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master", "testing" ]
-
+    branches:
+      - main
+      - fast
 jobs:
   build:
     name: ${{ matrix.config.name }}
@@ -14,47 +16,64 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {
-              name: "Windows MSVC 64 Bit",
-              os: windows-2022,
-              environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat",
-              generators: "Visual Studio 17 2022",
-              msvc_arch: x64
-            }
-          - {
-              name: "Ubuntu Latest",
-              os: ubuntu-latest,
-              c_compiler: gcc,
-              cpp_compiler: g++,
-            }
-          - {
-              name: "Ubuntu Latest (Clang)",
-              os: ubuntu-latest,
-              c_compiler: clang,
-              cpp_compiler: clang++,
-            }
-          - {
-              name: "Mac OS Latest arm64",
-              os: macos-latest,
-              c_compiler: clang,
-              cpp_compiler: clang++,
-              osx_arch: arm64
-            }
+          - name: Windows x86_64
+            os: windows-2022
+            msvc_arch: x64
+          - name: Ubuntu
+            os: ubuntu-latest
+          - name: Mac ARM64
+            os: macos-latest
+            osx_arch: arm64
     env:
-      CMAKE_GENERATOR: "${{ matrix.config.generators }}"
+      CC: clang
+      CXX: clang++
+      CMAKE_GENERATOR: Ninja
     steps:
-    - uses: actions/checkout@v4
-    - uses: ilammy/setup-nasm@v1
-    - run: git fetch --prune --unshallow
-    - name: Ubuntu/Mac OS X
-      if: ${{ !contains( matrix.config.generators, 'Visual Studio' ) }}
-      run: |
-        cmake --fresh -B Build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_CXX_COMPILER=${{ matrix.config.cpp_compiler }}" "-DCMAKE_C_COMPILER=${{ matrix.config.c_compiler }}" -DNATIVE=ON -DSVT_AV1_LTO=ON -DBUILD_APPS=ON -DBUILD_DEC=OFF -DREPRODUCIBLE_BUILDS=ON "-DCMAKE_OSX_ARCHITECTURES=${{ matrix.config.osx_arch }}"
-        cmake --build Build --config Release --parallel $(getconf _NPROCESSORS_ONLN 2> /dev/null || nproc 2> /dev/null || sysctl -n hw.ncpu 2> /dev/null)
-      shell: bash
-    - name: MSVC build
-      if: contains( matrix.config.generators, 'Visual Studio' )
-      run: |
-        cmake -B Build -A "${{ matrix.config.msvc_arch }}" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_APPS=ON -DBUILD_DEC=OFF -DREPRODUCIBLE_BUILDS=ON
-        cmake --build Build --config Release
-      shell: cmd
+      - uses: actions/checkout@v4
+      - uses: ilammy/setup-nasm@v1
+      - name: Ubuntu / Mac
+        if: ${{ !contains( matrix.config.os, 'windows' ) }}
+        run: >
+          cmake --fresh -B svt_build -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_SHARED_LIBS=OFF -DSVT_AV1_LTO=ON -DENABLE_AVX512=ON
+          -DCMAKE_OSX_ARCHITECTURES=${{ matrix.config.osx_arch }}
+          -DNATIVE=ON
+          -DREPRODUCIBLE_BUILDS=ON
+        shell: bash
+      - name: Windows
+        if: contains( matrix.config.os, 'windows' )
+        run: >
+          cmake --fresh -B svt_build -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_SHARED_LIBS=OFF -DSVT_AV1_LTO=OFF -DENABLE_AVX512=ON
+          -DCMAKE_C_FLAGS_RELEASE="-O3 -DNDEBUG -march=x86-64-v4 -flto"
+          -DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG -march=x86-64-v4 -flto"
+          -DREPRODUCIBLE_BUILDS=ON
+          -DCMAKE_EXE_LINKER_FLAGS="-flto"
+        shell: cmd
+      - name: Build
+        run: |
+          cmake --build svt_build --config Release
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.config.name }}
+          path: Bin/Release/
+          retention-days: 90
+      - name: Delete existing release
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete ${{ matrix.config.os }} --cleanup-tag
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ matrix.config.os }}
+          name: Release ${{ matrix.config.name }}
+          draft: false
+          prerelease: false
+          body: ${{ matrix.config.os }} auto build
+          files: |
+            Bin/Release/*
