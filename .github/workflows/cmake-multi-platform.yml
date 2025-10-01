@@ -70,7 +70,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ matrix.config.os }}
+          tag_name: ${{ matrix.config.os }}_fast
           name: Release ${{ matrix.config.name }}
           draft: false
           prerelease: false
